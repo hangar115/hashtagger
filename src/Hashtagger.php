@@ -29,7 +29,7 @@ namespace Ampersa\Hashtagger;
 
 use InvalidArgumentException;
 use NlpTools\Stemmers\PorterStemmer;
-use NlpTools\Tokenizers\WhitespaceAndPunctuationTokenizer;
+use NlpTools\Tokenizers\WhitespaceTokenizer;
 
 class Hashtagger
 {
@@ -40,7 +40,7 @@ class Hashtagger
     protected $content;
 
     /** @var float */
-    protected $ratio = 0.3;
+    protected $ratio = 0.35;
 
     /** @var array */
     protected $index = [];
@@ -60,7 +60,7 @@ class Hashtagger
      * @param string $content
      * @param string $lang
      */
-    public function __construct($title, $content, $lang = 'en')
+    public function __construct(string $title, string $content, string $lang = 'en')
     {
         $this->stopwords = $this->loadStopwords($lang);
 
@@ -85,13 +85,17 @@ class Hashtagger
 
         $ranks = [];
         foreach ($this->title[1] as $token) {
+            if (strlen($token) < 2) {
+                continue;
+            }
+
             $ranks[$token] = $this->index[$token];
         }
 
         arsort($ranks);
 
-        foreach (array_keys(array_slice($ranks, 0, $total)) as $token) {
-            $this->title[2][$token] = sprintf('#%s', $this->title[2][$token]);
+        foreach (array_keys(array_slice($ranks, 0, $total, true)) as $token) {
+            $this->title[2][$token] = $this->applyHashtag($this->title[2][$token]);
         }
 
         $previousTag = null;
@@ -103,6 +107,7 @@ class Hashtagger
             if ($word{0} == '#') {
                 if (!empty($previousTag)) {
                     $mergedTag = $this->mergeTags($previousTag, $word, ($previousMerged == true));
+
                     if ($mergedTag) {
                         array_pop($taggedTitle);
                         $taggedTitle[] = $mergedTag;
@@ -142,18 +147,13 @@ class Hashtagger
         $string = mb_convert_encoding($string, 'utf-8');
         $string = str_replace(["\n", "\r"], '', $string);
 
-        $tokens = (new WhitespaceAndPunctuationTokenizer)
+        $tokens = (new WhitespaceTokenizer)
                     ->tokenize($string);
 
         foreach ($tokens as $token) {
-            $stemmedToken = $this->stemmer->stem($token);
+            $stemmedToken = $this->removePunctuation(mb_strtolower($this->stemmer->stem($token)));
 
             if (in_array($stemmedToken, $this->stopwords) and !$title) {
-                $previousToken = null;
-                continue;
-            }
-
-            if (strlen($stemmedToken) < 2) {
                 $previousToken = null;
                 continue;
             }
@@ -183,28 +183,63 @@ class Hashtagger
         return [$string, $stemmedTokens, $originalTokens];
     }
 
+    /**
+     * Merge 2 tags into a single hashtag
+     * @param  string  $tag1
+     * @param  string  $tag2
+     * @param  boolean $multigram
+     * @return string
+     */
     protected function mergeTags($tag1, $tag2, $multigram = false) : string
     {
         $tag1 = str_replace('#', '', $tag1);
         $tag2 = str_replace('#', '', $tag2);
 
+        $stag1 = $this->removePunctuation(mb_strtolower($this->stemmer->stem($tag1)));
+        $stag2 = $this->removePunctuation(mb_strtolower($this->stemmer->stem($tag2)));
+
         if (!$multigram) {
-            $merged = sprintf('%s %s', $this->stemmer->stem($tag1), $this->stemmer->stem($tag2));
+            $merged = sprintf('%s %s', $stag1, $stag2);
 
             if (!isset($this->index[$merged])) {
                 return false;
             }
 
-            if (($this->index[$merged] / $this->index[$this->stemmer->stem($tag1)]) < 0.5) {
+            if (($this->index[$merged] / $this->index[$stag1]) < 0.5) {
                 return false;
             }
 
-            if (($this->index[$merged] / $this->index[$this->stemmer->stem($tag2)]) < 0.5) {
+            if (($this->index[$merged] / $this->index[$stag2]) < 0.5) {
                 return false;
             }
         }
 
-        return sprintf('#%s%s', $tag1, $tag2);
+        return sprintf('#%s%s', ucfirst($tag1), ucfirst($tag2));
+    }
+
+    /**
+     * Convert a string into a hashtag
+     * @param  string $string
+     * @return string
+     */
+    protected function applyHashtag(string $string) : string
+    {
+        return sprintf(
+            '#%s',
+            $this->removePunctuation(
+                $string
+            )
+        );
+    }
+
+    /**
+     * Remove punctuation from a string
+     * @param  string $string
+     * @return string
+     */
+    protected function removePunctuation(string $string) : string
+    {
+        return preg_replace('/[^a-zA-Z0-9]/', '', $string);
     }
 
     /**

@@ -6,7 +6,7 @@ use Ampersa\Hashtagger\Hashtagger;
 class HashtaggerTest extends TestCase
 {
     /**
-     * 
+     *
      * @return void
      */
     public function testHashtagger()
@@ -36,11 +36,11 @@ To find out more about the ‘5 for 5’ scheme visit www.simononthestreets.co.u
         $tagger = new Hashtagger($title, $text);
         $result = $tagger->tag();
 
-        $this->assertEquals('Leeds based businesses #support local #homeless charity', $result);
+        $this->assertEquals('Leeds-based #businesses support local #homeless charity', $result);
     }
 
     /**
-     * 
+     *
      * @return void
      */
     public function testHashtaggerRatio()
@@ -70,6 +70,6 @@ To find out more about the ‘5 for 5’ scheme visit www.simononthestreets.co.u
         $tagger = new Hashtagger($title, $text);
         $result = $tagger->tag(0.6);
 
-        $this->assertEquals('Leeds based #businesses #support local #homeless #charity', $result);
+        $this->assertEquals('Leeds-based #businesses #support local #homeless charity', $result);
     }
 }

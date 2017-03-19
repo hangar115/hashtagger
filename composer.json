@@ -1,7 +1,7 @@
 {
     "name": "ampersa/hashtagger",
     "description": "Auto-hashtag an article title based on the content",
-    "version": "0.2.1",
+    "version": "0.3",
     "license": "MIT",
     "authors" : [
         {

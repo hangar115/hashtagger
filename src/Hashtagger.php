@@ -30,7 +30,6 @@ namespace Ampersa\Hashtagger;
 use InvalidArgumentException;
 use NlpTools\Stemmers\PorterStemmer;
 use NlpTools\Tokenizers\WhitespaceAndPunctuationTokenizer;
-use NlpTools\Utils\Normalizers\English as EnglishNormalizer;
 
 class Hashtagger
 {

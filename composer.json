@@ -1,0 +1,24 @@
+{
+    "name": "ampersa/hashtagger",
+    "description": "Auto-hashtag an article title based on the content",
+    "version": "0.1",
+    "license": "MIT",
+    "authors" : [
+        {
+            "name": "Adam Prickett",
+            "email": "adam.prickett@ampersa.co.uk"
+        }
+    ],
+    "require": {
+        "php": ">=5.4",
+        "nlp-tools/nlp-tools": "^0.1.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ampersa\\Hashtagger\\": "src/"
+        }
+    }
+}

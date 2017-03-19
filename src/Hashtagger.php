@@ -216,11 +216,11 @@ class Hashtagger
     {
         $stopwordFile = sprintf('stopwords_%s.txt', $lang);
 
-        if (file_exists('./data/'.$stopwordFile)) {
+        if (file_exists(__DIR__.'/../data/'.$stopwordFile)) {
             return array_filter(
                 array_map(
                     'trim',
-                    file('./data/'.$stopwordFile)
+                    file(__DIR__.'/../data/'.$stopwordFile)
                 )
             );
         }

@@ -46,10 +46,10 @@ class Hashtagger
     protected $index = [];
 
     /** @var array */
-    protected $stopwords = [];
+    protected $ranks = [];
 
     /** @var array */
-    protected $originalTokens = [];
+    protected $stopwords = [];
 
     /** @var Stemmer */
     protected $stemmer;
@@ -83,18 +83,17 @@ class Hashtagger
 
         $total = floor(count($this->title[1])*$this->ratio);
 
-        $ranks = [];
         foreach ($this->title[1] as $token) {
             if (strlen($token) < 2) {
                 continue;
             }
 
-            $ranks[$token] = $this->index[$token];
+            $this->ranks[$token] = $this->index[$token];
         }
 
-        arsort($ranks);
+        arsort($this->ranks);
 
-        foreach (array_keys(array_slice($ranks, 0, $total, true)) as $token) {
+        foreach (array_keys(array_slice($this->ranks, 0, $total, true)) as $token) {
             $this->title[2][$token] = $this->applyHashtag($this->title[2][$token]);
         }
 
@@ -104,6 +103,7 @@ class Hashtagger
 
         foreach ($this->title[1] as $token) {
             $word = $this->title[2][$token];
+
             if ($word{0} == '#') {
                 if (!empty($previousTag)) {
                     $mergedTag = $this->mergeTags($previousTag, $word, ($previousMerged == true));
@@ -118,6 +118,13 @@ class Hashtagger
                         $taggedTitle[] = $word;
                     }
                 } else {
+                    // Hashtags cannot begin with a stopword
+                    if ($this->isStopword($word)) {
+                        $taggedTitle[] = substr($word, 1);
+                        $previousTag = null;
+                        continue;
+                    }
+
                     $taggedTitle[] = $word;
                 }
 
@@ -134,11 +141,20 @@ class Hashtagger
     }
 
     /**
+     * Accessor for the $ranks property
+     * @return array
+     */
+    public function getRanks() : array
+    {
+        return $this->ranks;
+    }
+
+    /**
      * Tokenizes and adds a string to the index
      * @param string  $string
-     * @param boolean $title
+     * @param boolean $isTitle
      */
-    protected function addStringToIndex($string, $title = false) : array
+    protected function addStringToIndex($string, $isTitle = false) : array
     {
         $previousToken = null;
         $stemmedTokens = [];
@@ -153,7 +169,7 @@ class Hashtagger
         foreach ($tokens as $token) {
             $stemmedToken = $this->removePunctuation(mb_strtolower($this->stemmer->stem($token)));
 
-            if (in_array($stemmedToken, $this->stopwords) and !$title) {
+            if ($this->isStopword($token) and !$isTitle) {
                 $previousToken = null;
                 continue;
             }
@@ -261,5 +277,20 @@ class Hashtagger
         }
 
         throw new InvalidArgumentException(sprintf('A stopwords file for "%s" could not be located', $lang));
+    }
+
+    /**
+     * Determine if the provided token is a stopword
+     * @param  string  $token
+     * @param  boolean $normalise
+     * @return boolean
+     */
+    protected function isStopword(string $token, $normalise = true) : bool
+    {
+        if ($normalise) {
+            $token = $this->removePunctuation(mb_strtolower($this->stemmer->stem($token)));
+        }
+
+        return in_array($token, $this->stopwords);
     }
 }

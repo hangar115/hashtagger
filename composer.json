@@ -1,6 +1,6 @@
 {
-    "name": "ampersa/hashtagger",
-    "description": "Auto-hashtag an article title based on the content",
+    "name": "hangar115/hashtagger",
+    "description": "Auto-hashtag an article title based on the content, fork of ampersa/hashtagger",
     "version": "0.4",
     "license": "MIT",
     "authors" : [
